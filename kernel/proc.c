@@ -110,6 +110,7 @@ allocproc(void)
   for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if(p->state == UNUSED) {
+      p->cputime=0;
       goto found;
     } else {
       release(&p->lock);
@@ -684,3 +685,52 @@ procinfo(uint64 addr)
   }
   return nprocs;
 }
+int
+wait2(uint64 status, uint64 rusage)
+{
+	struct proc *np;
+	struct proc *p = myproc();
+	struct rusage ru;
+	int havekids, pid;
+	
+	acquire(&p->lock);
+	for (;;) {
+		// Scan through table looking for exited children.
+		havekids = 0;
+		for (np = proc; np <&proc[NPROC]; np++) {
+			if (np->parent == p) {
+			   acquire(&np -> lock);
+				
+			   havekids = 1;
+			   if (np->state == ZOMBIE) {
+				// Found one.
+				pid = np->pid;
+				ru.cputime = np->cputime;
+				if(status!= 0 && copyout(p->pagetable, status, (char *)&np->xstate, sizeof(np->xstate))<0){
+					release(&np->lock);
+					release(&wait_lock);
+					return -1;
+				}
+				if(rusage!= 0 && copyout(p->pagetable, rusage, (char *)&ru.cputime,sizeof(ru.cputime))<0) {
+					release(&np->lock);
+					release(&wait_lock);
+					return -1;
+				}
+				freeproc(np) ;
+				release(&np->lock);
+				release(&wait_lock);
+				return pid;
+			}
+			release(&np->lock);
+		}
+	}
+		if (!havekids || p->killed){
+		release(&wait_lock);
+		return -1;
+		}
+		printf("here in proc.c to be sleep if\n");
+		sleep(p, &wait_lock);
+	}
+}
+
+

@@ -39,6 +39,17 @@ sys_wait(void)
 }
 
 uint64
+sys_wait2(void)
+{
+  uint64 status;
+  uint rusage;
+  if (argaddr(0, &status)<0 || argaddr(1, &rusage)<0)
+     return -1;
+    
+  return wait2(status, rusage);
+  
+}
+uint64
 sys_sbrk(void)
 {
   int addr;

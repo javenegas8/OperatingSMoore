@@ -164,6 +164,13 @@ clockintr()
 {
   acquire(&tickslock);
   ticks++;
+  
+  struct proc*p = myproc();
+  if (p && p->state == RUNNING)
+  {
+     p->cputime++;
+  }
+  
   wakeup(&ticks);
   release(&tickslock);
 }
