@@ -38,17 +38,17 @@ sys_wait(void)
   return wait(p);
 }
 
-uint64
+/*uint64
 sys_wait2(void)
 {
-  uint64 status;
-  uint rusage;
-  if (argaddr(0, &status)<0 || argaddr(1, &rusage)<0)
-     return -1;
+  //uint64 status;
+  //uint rusage;
+  //if (argaddr(0, &status)<0 || argaddr(1, &rusage)<0)
+     //return -1;
     
-  return wait2(status, rusage);
+  //return wait2(status, rusage);
   
-}
+}*/
 uint64
 sys_sbrk(void)
 {
@@ -118,3 +118,23 @@ sys_getprocs(void)
     return -1;
   return(procinfo(addr));
 }
+//calling getpriority
+//
+uint64
+sys_getpriority(void){
+	return myproc()->priority;
+}
+//calling setpriority
+//
+uint64
+sys_setpriority(void){
+	int p; 
+	if(argint(0, &p)<0)
+	         return -1;
+	if(p < 0 || p > 99)
+	         return -1;
+	
+	myproc()->priority = p;
+	return 0;
+}
+

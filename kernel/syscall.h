@@ -21,3 +21,8 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_getprocs  22
+#define SYS_wait2 23
+#define SYS_getpriority 24
+#define SYS_setpriority 25
+
+

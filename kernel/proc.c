@@ -6,6 +6,8 @@
 #include "proc.h"
 #include "pstat.h"
 #include "defs.h"
+#include "syscall.h"
+#define MAXEFFPRIORITY 99
 
 struct cpu cpus[NCPU];
 
@@ -121,6 +123,9 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+  p->cputime = 0;
+  p->priority = 0;
+  
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -245,6 +250,7 @@ userinit(void)
   p->cwd = namei("/");
 
   p->state = RUNNABLE;
+  p->readytime = sys_uptime();
 
   release(&p->lock);
 }
@@ -315,6 +321,8 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+  np->priority = p->priority;
+  np->readytime = sys_uptime();
   release(&np->lock);
 
   return pid;
@@ -446,7 +454,8 @@ scheduler(void)
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
     intr_on();
-
+   
+   if(DEFAULT_POLICY == RR){
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
@@ -454,6 +463,7 @@ scheduler(void)
         // to release its lock and then reacquire it
         // before jumping back to us.
         p->state = RUNNING;
+        p->readytime = sys_uptime();
         c->proc = p;
         swtch(&c->context, &p->context);
 
@@ -464,6 +474,36 @@ scheduler(void)
       release(&p->lock);
     }
   }
+else{
+	int maxPriority = -1;
+	struct proc *chosen = 0;
+	int min(int a, int b){
+		return (a>b) ? b:a;
+	}
+	
+	for(p=proc; p<&proc[NPROC]; p++){
+	   acquire(&p->lock);
+	   if(p->state == RUNNABLE){
+	      int effective_priority = min(MAXEFFPRIORITY, p->priority + (sys_uptime() - p->readytime));
+	      if(effective_priority > maxPriority){
+	         maxPriority = effective_priority;
+	         chosen = p;
+	      }
+	    }
+	    release(&p->lock);
+	}
+	if(chosen !=0){
+	   acquire(&chosen->lock);
+	   if(chosen->state == RUNNABLE){
+	    chosen->state= RUNNING;
+	    c->proc = chosen;
+	    swtch(&c->context, &chosen->context);
+	    c->proc = 0;
+	   }
+	   release(&chosen->lock);
+        }
+     }
+  }	
 }
 
 // Switch to scheduler.  Must hold only p->lock
@@ -500,6 +540,7 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
+  p->readytime = sys_uptime();
   sched();
   release(&p->lock);
 }
@@ -568,6 +609,7 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
+        p->readytime = sys_uptime();
       }
       release(&p->lock);
     }
@@ -589,7 +631,9 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
+        p->readytime = sys_uptime();
       }
+      
       release(&p->lock);
       return 0;
     }
@@ -672,6 +716,9 @@ procinfo(uint64 addr)
     nprocs++;
     procinfo.pid = p->pid;
     procinfo.state = p->state;
+    procinfo.priority = p->priority;
+    procinfo.cputime = p->cputime;
+    procinfo.readytime = p->readytime;
     procinfo.size = p->sz;
     if (p->parent)
       procinfo.ppid = (p->parent)->pid;
@@ -685,7 +732,7 @@ procinfo(uint64 addr)
   }
   return nprocs;
 }
-int
+/*int
 wait2(uint64 status, uint64 rusage)
 {
 	struct proc *np;
@@ -731,6 +778,6 @@ wait2(uint64 status, uint64 rusage)
 		printf("here in proc.c to be sleep if\n");
 		sleep(p, &wait_lock);
 	}
-}
+}*/
 
 
