@@ -44,11 +44,16 @@ sys_sbrk(void)
   int addr;
   int n;
 
+  int nz;
+  
   if(argint(0, &n) < 0)
     return -1;
   addr = myproc()->sz;
-  if(growproc(n) < 0)
+//  if(growproc(n) < 0)
+  nz = addr + n;
+  if(nz < addr || nz > TRAPFRAME)
     return -1;
+  myproc() -> sz = nz;
   return addr;
 }
 
@@ -107,3 +112,8 @@ sys_getprocs(void)
     return -1;
   return(procinfo(addr));
 }
+uint64
+sys_freepmem(void){
+   return nfreepages() * PGSIZE;
+}
+
