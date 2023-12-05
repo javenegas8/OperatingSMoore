@@ -107,6 +107,12 @@ int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 int             procinfo(uint64);
 
+struct          mmr_list* get_mmr_list(int);
+int             alloc_mmr_listid(void);
+void            dealloc_mmr_listid(int);
+void            mmrlistinit(void);
+
+
 // swtch.S
 void            swtch(struct context*, struct context*);
 
@@ -164,7 +170,9 @@ pagetable_t     uvmcreate(void);
 void            uvminit(pagetable_t, uchar *, uint);
 uint64          uvmalloc(pagetable_t, uint64, uint64);
 uint64          uvmdealloc(pagetable_t, uint64, uint64);
-int             uvmcopy(pagetable_t, pagetable_t, uint64);
+int             uvmcopy(pagetable_t, pagetable_t, uint64,uint64);
+int             uvmcopyshared(pagetable_t,pagetable_t, uint64,uint64);
+
 void            uvmfree(pagetable_t, uint64);
 void            uvmunmap(pagetable_t, uint64, uint64, int);
 void            uvmclear(pagetable_t, uint64);
@@ -172,6 +180,10 @@ uint64          walkaddr(pagetable_t, uint64);
 int             copyout(pagetable_t, uint64, char *, uint64);
 int             copyin(pagetable_t, char *, uint64, uint64);
 int             copyinstr(pagetable_t, char *, uint64, uint64);
+int             mapvpages(pagetable_t, uint64, uint64);
+
+
+
 
 // plic.c
 void            plicinit(void);
