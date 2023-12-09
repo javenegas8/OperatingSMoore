@@ -589,13 +589,13 @@ munmap(uint64 addr, uint64 length)
 uint64
 sys_munmap(void)
 {
-  uint64 addr;
-  uint64 length;
-  
-  if (argaddr(1, &addr) < 0 || argaddr(2, &length) < 0)
-    return -1;
-
-  return munmap(addr, length);
-
+	uint64 addr;
+	uint64 length;
+	if(argaddr(0, &addr) < 0)
+		return -1;
+	if(argaddr(1, &length) < 0)
+		return -1;
+	return 0;
 }
+
 

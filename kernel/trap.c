@@ -69,17 +69,40 @@ usertrap(void)
   } else if((which_dev = devintr()) != 0){
     // ok
     
-  //Homework 4 (task 3)
+  
   } else if(r_scause() == 13 || r_scause() == 15){
   	//checking if the faulting address (stval register) is valid
-  	if(r_stval() < p->sz){
-  		//printf("usertrap(): aaa\n");
-  		//allocate physical frame memory
-  		void *physical_mem = kalloc();
+	//printf("Esteban");
+  	if(r_stval() >= p->sz){
 
+  		//check mapped region protection permits operation
+  		for(int i=0; i<MAX_MMR; i++){
+  			if(p->mmr[i].valid && p->mmr[i].addr < r_stval() && p->mmr[i].addr+p->mmr[i].length > r_stval()){
+	  			if(r_scause() == 13){
+	  				//read permision not set
+	  				if((p->mmr[i].prot & PROT_READ) == 0){
+	  					p->killed = 1;
+	  					exit(-1);
+	  				}
+	  			}
+	  			if(r_scause() == 15){
+	  				//write permision set
+	  				if((p->mmr[i].prot & PROT_WRITE) == 0){
+	  					p->killed = 1;
+	  					exit(-1);
+	  				}
+	  			}
+	  		}
+  		}  
+
+  	
+  	}
+  	//allocate physical frame memory
+  		void *physical_mem = kalloc();
 		//if allocating memory was done correctly
   		if(physical_mem){
-  			
+
+
   		//maps virtual page to physical memory and inserts to pagetable
   			if(mappages(p->pagetable, PGROUNDDOWN(r_stval()), PGSIZE, (uint64)physical_mem, (PTE_R | PTE_W | PTE_X | PTE_U)) < 0){ 
   				kfree(physical_mem);
@@ -87,18 +110,20 @@ usertrap(void)
   				p->killed = 1;
   				exit(-1);
   			}
-  			
+
   		}else{
 			printf("usertrap(): no more memory\n");
   			p->killed = 1;
   			exit(-1);
   		}
-  		
-  	}else{
+
+  	/*else{
   		printf("usertrap(): invalid memory address\n");
   		p->killed = 1;
   		exit(-1);
-  	}
+  	}*/
+
+
   
   } else {
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
