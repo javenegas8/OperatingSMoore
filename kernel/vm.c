@@ -299,7 +299,7 @@ uvmfree(pagetable_t pagetable, uint64 sz)
 // physical memory.
 // returns 0 on success, -1 on failure.
 // frees any allocated pages on failure.
-int
+/*int
 uvmcopy(pagetable_t old, pagetable_t new, uint64 start, uint64 end)
 {
   pte_t *pte;
@@ -327,7 +327,7 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 start, uint64 end)
  err:
   uvmunmap(new, 0, i / PGSIZE, 1);
   return -1;
-}
+}*/
 int
 uvmcopyshared(pagetable_t old, pagetable_t new, uint64 start, uint64 end)
 {

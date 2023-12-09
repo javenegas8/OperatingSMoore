@@ -30,6 +30,10 @@ int freepmem(void);
 int *mmap(void *addr, int len, int prot, int flags, int fildes, int off);
 int munmap(void *addr, int len);
 
+int sem_init(void*, int, int);
+int sem_destroy(void*);
+int sem_wait(void*);
+int sem_post(void*);
 
 // ulib.c
 int stat(const char*, struct stat*);
